@@ -1,11 +1,15 @@
 import re
 import tempfile
 import subprocess
+from math import ceil
 from typing import List, Tuple
 
 from git import Repo, Commit
 
 REPO_URL = "git@github.com:TimJentzsch/stonefish_engine.git"
+
+COMMIT_COUNT = 500
+COMMIT_BATCH_COUNT = 20
 
 GITHUB_SSH_REGEX = re.compile(
     r"^git@github\.com:(?P<organization>[\w_-]+)/(?P<repository>[\w_-]+)\.git$"
@@ -37,8 +41,10 @@ def check_compile_errors(dir_path: str) -> bool:
     return output.returncode != 0
 
 
-def process_repo(repo_url: str) -> None:
+def process_repo(repo_url: str) -> bool:
     organization, repository = get_organization_repository(repo_url)
+
+    found_error = False
 
     with tempfile.TemporaryDirectory() as tempdir:
         print(f"Cloning {organization}/{repository} to file://{tempdir}...")
@@ -46,25 +52,43 @@ def process_repo(repo_url: str) -> None:
 
         # Get the commits to process
         commits: List[Commit] = []
-        for commit, _ in zip(repo.iter_commits(), range(20)):
+        for commit, _ in zip(repo.iter_commits(), range(COMMIT_COUNT)):
             commits.append(commit)
+        commits.reverse()
 
-        for commit in reversed(commits):
-            print(
-                "Processing ",
-                GITHUB_COMMIT_URL.format(
-                    organization=organization, repository=repository, hash=commit.hexsha
-                ),
-            )
-            errors = check_compile_errors(tempdir)
-            if errors:
-                print("Errors detected!")
-            else:
-                print("No errors detected.")
+        print(f"Progress: 0/{len(commits)} (0%)")
+
+        for batch in range(ceil(len(commits) / COMMIT_BATCH_COUNT)):
+            batch_start = batch * COMMIT_BATCH_COUNT
+            batch_end = batch_start + COMMIT_BATCH_COUNT
+
+            for commit in commits[batch_start:batch_end]:
+                errors = check_compile_errors(tempdir)
+                if errors:
+                    found_error = True
+                    print(
+                        "Error detected for ",
+                        GITHUB_COMMIT_URL.format(
+                            organization=organization,
+                            repository=repository,
+                            hash=commit.hexsha,
+                        ),
+                    )
+
+            cur_count = min(len(commits), batch_end)
+            percentage = cur_count / len(commits)
+            print(f"Progress: {cur_count}/{len(commits)} ({percentage:.0%})")
+
+    return found_error
 
 
 def main():
-    process_repo(REPO_URL)
+    found_error = process_repo(REPO_URL)
+
+    if found_error:
+        exit(1)
+    else:
+        exit(0)
 
 
 if __name__ == "__main__":
