@@ -1,15 +1,12 @@
 import re
 import tempfile
-import subprocess
 from math import ceil
 from typing import List, Tuple
+import yaml
 
 from git import Repo, Commit
 
 from cargo import cargo_build, check_for_ice, cargo_clean
-
-REPO_URL = "git@github.com:TimJentzsch/stonefish_engine.git"
-# REPO_URL = "git@github.com:bevyengine/bevy.git"
 
 COMMIT_COUNT = 500
 COMMIT_BATCH_COUNT = 20
@@ -77,11 +74,29 @@ def process_repo(repo_url: str) -> bool:
 
 
 def main():
-    found_error = process_repo(REPO_URL)
+    with open("config.yml", "r") as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as e:
+            print(f"Failed to parse config.yml: {e}")
+            exit(1)
 
-    if found_error:
+    repos = config.get("repositories")
+    if repos is None or len(repos) == 0:
+        print(f"No repositories defined in config.yml!")
+        exit(1)
+
+    error_count = 0
+
+    for repo in repos:
+        if process_repo(repo):
+            error_count += 1
+
+    if error_count > 0:
+        print(f"Found {error_count} internal compiler error(s).")
         exit(1)
     else:
+        print(f"No internal compiler error found.")
         exit(0)
 
 
