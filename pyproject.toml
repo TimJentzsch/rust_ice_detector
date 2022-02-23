@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "rust_compiler_tests"
+name = "rust_ice_detector"
 version = "0.1.0"
-description = ""
+description = "A tool to search for internal compiler errors (ICEs) for Rust."
 authors = ["Tim Jentzsch <tim-jentzsch@gmx.de>"]
 
 [tool.poetry.dependencies]
