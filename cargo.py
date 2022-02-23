@@ -1,6 +1,7 @@
 import subprocess
 from typing import Union
 
+# Text to indicate an internal compiler error (ICE)
 ICE_TEXT = "error: internal compiler error: unexpected panic"
 
 ProcessOutput = Union[subprocess.CompletedProcess, subprocess.CompletedProcess[str]]
@@ -32,5 +33,5 @@ def check_for_ice(dir_path: str) -> bool:
     """Check for an internal compiler error (ICE) in the given directory."""
     build_output = cargo_build(dir_path)
     return build_output.returncode != 0 and (
-        ICE_TEXT in build_output.stdout or ICE_TEXT in build_output.stderr
+        ICE_TEXT in (build_output.stderr or build_output.stdout)
     )
