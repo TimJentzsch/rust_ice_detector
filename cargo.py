@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 from typing import Union, Mapping
@@ -55,8 +56,8 @@ def _run_cargo_command(cfg, dir_path: str, cmd: str) -> ProcessOutput:
     # Normal compiler errors and ICEs are passed through
     if output.returncode != 0:
         if COMPILE_ERROR_TEXT not in (output.stdout or output.stderr):
-            print("An unexpected error occurred:")
-            print(output.stdout)
+            logging.error("An unexpected error occurred:")
+            logging.error(output.stdout)
             exit(1)
     return output
 
