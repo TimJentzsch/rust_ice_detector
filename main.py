@@ -7,6 +7,7 @@ from typing import List, Tuple
 from git import Repo, Commit
 
 REPO_URL = "git@github.com:TimJentzsch/stonefish_engine.git"
+# REPO_URL = "git@github.com:bevyengine/bevy.git"
 
 COMMIT_COUNT = 500
 COMMIT_BATCH_COUNT = 20
@@ -56,6 +57,10 @@ def process_repo(repo_url: str) -> bool:
             commits.append(commit)
         commits.reverse()
 
+        print("Compiling initial commit:")
+        repo.git.checkout(commits[0].hexsha)
+        check_compile_errors(tempdir)
+
         print(f"Progress: 0/{len(commits)} (0%)")
 
         for batch in range(ceil(len(commits) / COMMIT_BATCH_COUNT)):
@@ -63,6 +68,7 @@ def process_repo(repo_url: str) -> bool:
             batch_end = batch_start + COMMIT_BATCH_COUNT
 
             for commit in commits[batch_start:batch_end]:
+                repo.git.checkout(commit.hexsha)
                 errors = check_compile_errors(tempdir)
                 if errors:
                     found_error = True
