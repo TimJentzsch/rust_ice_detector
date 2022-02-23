@@ -6,6 +6,8 @@ from typing import List, Tuple
 
 from git import Repo, Commit
 
+from cargo import cargo_build, check_for_ice, cargo_clean
+
 REPO_URL = "git@github.com:TimJentzsch/stonefish_engine.git"
 # REPO_URL = "git@github.com:bevyengine/bevy.git"
 
@@ -27,21 +29,6 @@ def get_organization_repository(repo_url: str) -> Tuple[str, str]:
     return match["organization"], match["repository"]
 
 
-def check_compile_errors(dir_path: str) -> bool:
-    """Checks for compile errors in the given directory.
-
-    This will run `cargo build` and check for any errors in the output.
-    """
-    output = subprocess.run(
-        ["cargo", "build"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        cwd=dir_path,
-    )
-    return output.returncode != 0
-
-
 def process_repo(repo_url: str) -> bool:
     organization, repository = get_organization_repository(repo_url)
 
@@ -59,7 +46,7 @@ def process_repo(repo_url: str) -> bool:
 
         print("Compiling initial commit:")
         repo.git.checkout(commits[0].hexsha)
-        check_compile_errors(tempdir)
+        cargo_build(tempdir)
 
         print(f"Progress: 0/{len(commits)} (0%)")
 
@@ -69,7 +56,7 @@ def process_repo(repo_url: str) -> bool:
 
             for commit in commits[batch_start:batch_end]:
                 repo.git.checkout(commit.hexsha)
-                errors = check_compile_errors(tempdir)
+                errors = check_for_ice(tempdir)
                 if errors:
                     found_error = True
                     print(
@@ -80,6 +67,7 @@ def process_repo(repo_url: str) -> bool:
                             hash=commit.hexsha,
                         ),
                     )
+                    cargo_clean(tempdir)
 
             cur_count = min(len(commits), batch_end)
             percentage = cur_count / len(commits)
