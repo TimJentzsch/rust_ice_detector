@@ -26,7 +26,7 @@ def get_organization_repository(repo_url: str) -> Tuple[str, str]:
     return match["organization"], match["repository"]
 
 
-def process_repo(repo_url: str) -> bool:
+def process_repo(cfg, repo_url: str) -> bool:
     organization, repository = get_organization_repository(repo_url)
 
     found_error = False
@@ -43,7 +43,7 @@ def process_repo(repo_url: str) -> bool:
 
         print("Compiling initial commit:")
         repo.git.checkout(commits[0].hexsha)
-        cargo_build(tempdir)
+        cargo_build(cfg, tempdir)
 
         print(f"Progress: 0/{len(commits)} (0%)")
 
@@ -53,7 +53,7 @@ def process_repo(repo_url: str) -> bool:
 
             for commit in commits[batch_start:batch_end]:
                 repo.git.checkout(commit.hexsha)
-                errors = check_for_ice(tempdir)
+                errors = check_for_ice(cfg, tempdir)
                 if errors:
                     found_error = True
                     print(
@@ -64,7 +64,7 @@ def process_repo(repo_url: str) -> bool:
                             hash=commit.hexsha,
                         ),
                     )
-                    cargo_clean(tempdir)
+                    cargo_clean(cfg, tempdir)
 
             cur_count = min(len(commits), batch_end)
             percentage = cur_count / len(commits)
@@ -76,12 +76,12 @@ def process_repo(repo_url: str) -> bool:
 def main():
     with open("config.yml", "r") as stream:
         try:
-            config = yaml.safe_load(stream)
+            cfg = yaml.safe_load(stream)
         except yaml.YAMLError as e:
             print(f"Failed to parse config.yml: {e}")
             exit(1)
 
-    repos = config.get("repositories")
+    repos = cfg.get("repositories")
     if repos is None or len(repos) == 0:
         print(f"No repositories defined in config.yml!")
         exit(1)
@@ -89,7 +89,7 @@ def main():
     error_count = 0
 
     for repo in repos:
-        if process_repo(repo):
+        if process_repo(cfg, repo):
             error_count += 1
 
     if error_count > 0:
