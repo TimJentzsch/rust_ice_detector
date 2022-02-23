@@ -6,6 +6,7 @@ authors = ["Tim Jentzsch <tim-jentzsch@gmx.de>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+GitPython = "^3.1.27"
 
 [tool.poetry.dev-dependencies]
 

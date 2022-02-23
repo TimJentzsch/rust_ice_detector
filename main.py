@@ -1,16 +1,20 @@
-# This is a sample Python script.
+import tempfile
 
-# Press Ctrl+F5 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from git import Repo
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press F9 to toggle the breakpoint.
+REPO_URL = "git@github.com:TimJentzsch/stonefish_engine.git"
 
 
-# Press the green button in the gutter to run the script.
+def process_repo(name: str, repo_url: str) -> None:
+    with tempfile.TemporaryDirectory() as tempdir:
+        print(f"Cloning {name} to file://{tempdir}...")
+        repo = Repo.clone_from(repo_url, tempdir)
+        print(f"Active branch: {repo.active_branch}")
+
+
+def main():
+    process_repo("Repo", REPO_URL)
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    main()
