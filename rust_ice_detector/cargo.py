@@ -6,8 +6,9 @@ from typing import Union, Mapping
 # Text to indicate an internal compiler error (ICE)
 ICE_TEXT = "error: internal compiler error: unexpected panic"
 
-# Text to indicate a expected compiler error
-COMPILE_ERROR_TEXT = "error: could not compile"
+# Snippets of expected error messages
+# If an error message does NOT include one of this snippets, the tool will abort
+EXPECTED_ERRORS = ["error: could not compile", "failed to load source for dependency"]
 
 ProcessOutput = Union[subprocess.CompletedProcess, subprocess.CompletedProcess[str]]
 
@@ -26,6 +27,20 @@ def _get_cargo_env(cfg) -> Mapping[str, str]:
         **cargo_env,
     }
     return env
+
+
+def _is_expected_error(error: ProcessOutput) -> bool:
+    """Determine if the given error is expected.
+
+    If not, the tool should abort and exit.
+    """
+    error_message = error.stderr or error.stdout
+
+    for snippet in EXPECTED_ERRORS:
+        if snippet in error_message:
+            return True
+
+    return False
 
 
 def _run_cargo_command(cfg, dir_path: str, cmd: str) -> ProcessOutput:
@@ -55,7 +70,7 @@ def _run_cargo_command(cfg, dir_path: str, cmd: str) -> ProcessOutput:
     # This could be e.g. an invalid toolchain
     # Normal compiler errors and ICEs are passed through
     if output.returncode != 0:
-        if COMPILE_ERROR_TEXT not in (output.stdout or output.stderr):
+        if not _is_expected_error(output):
             logging.error("An unexpected error occurred:")
             logging.error(output.stdout)
             exit(1)
