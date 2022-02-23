@@ -38,3 +38,15 @@ repositories:
 
 1. Run `python rust_ice_detector/main.py`.
 2. Lean back and relax. This will take a while.
+
+## How it works
+
+1. The tool clones the repositories to your temp folder.
+2. It trances the most recent commits according to your configuration.
+3. It builds the first commit.
+4. It sequentially uses `cargo check` on the following commits.
+5. If an internal compiler error (ICE) is detected, the link to the commit is logged.
+
+## License
+
+This project is licensed under [MIT](./LICENSE_MIT) and [Apache 2.0](./LICENSE_APACHE-2.0).
