@@ -43,7 +43,8 @@ def process_repo(cfg, repo_url: str) -> bool:
 
         print("Compiling initial commit:")
         repo.git.checkout(commits[0].hexsha)
-        cargo_build(cfg, tempdir)
+        output = cargo_build(cfg, tempdir)
+        print(output.stdout)
 
         print(f"Progress: 0/{len(commits)} (0%)")
 
