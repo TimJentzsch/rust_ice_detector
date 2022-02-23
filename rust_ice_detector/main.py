@@ -16,9 +16,6 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-COMMIT_COUNT = 500
-COMMIT_BATCH_COUNT = 20
-
 GITHUB_SSH_REGEX = re.compile(
     r"^git@github\.com:(?P<organization>[\w_-]+)/(?P<repository>[\w_-]+)\.git$"
 )
@@ -65,6 +62,9 @@ def process_commit(
 def process_repo(cfg, repo_url: str) -> bool:
     organization, repository = get_organization_repository(repo_url)
 
+    commit_count = cfg.get("commit_count", 100)
+    commit_batch_size = cfg.get("commit_batch_size", 20)
+
     found_error = False
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -73,7 +73,7 @@ def process_repo(cfg, repo_url: str) -> bool:
 
         # Get the commits to process
         commits: List[Commit] = []
-        for commit, _ in zip(repo.iter_commits(), range(COMMIT_COUNT)):
+        for commit, _ in zip(repo.iter_commits(), range(commit_count)):
             commits.append(commit)
         commits.reverse()
 
@@ -84,9 +84,9 @@ def process_repo(cfg, repo_url: str) -> bool:
 
         logging.info(f"Progress: 0/{len(commits)} (0%)")
 
-        for batch in range(ceil(len(commits) / COMMIT_BATCH_COUNT)):
-            batch_start = batch * COMMIT_BATCH_COUNT
-            batch_end = batch_start + COMMIT_BATCH_COUNT
+        for batch in range(ceil(len(commits) / commit_batch_size)):
+            batch_start = batch * commit_batch_size
+            batch_end = batch_start + commit_batch_size
 
             for commit in commits[batch_start:batch_end]:
                 process_commit(cfg, tempdir, repo, commit, organization, repository)

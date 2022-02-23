@@ -23,6 +23,11 @@ cargo:
   env:
       RUSTC_FORCE_INCREMENTAL: 1
 
+# The number of commits to compile for each repository
+commit_count: 500
+# The number of commits to compile before displaying a progress-update
+commit_batch_size: 20
+
 # The repositories that should be tested
 # They need to be GitHub SSH URLs for now
 repositories:
