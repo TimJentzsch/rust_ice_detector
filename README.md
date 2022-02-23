@@ -31,5 +31,5 @@ repositories:
 
 ## Usage
 
-1. Run `python main.py`.
+1. Run `python rust_ice_detector/main.py`.
 2. Lean back and relax. This will take a while.

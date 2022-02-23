@@ -9,6 +9,11 @@ from git import Repo, Commit
 
 from cargo import cargo_build, check_for_ice, cargo_clean
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
 COMMIT_COUNT = 500
 COMMIT_BATCH_COUNT = 20
 
