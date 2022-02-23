@@ -1,4 +1,5 @@
 import re
+import sys
 import tempfile
 from math import ceil
 from typing import List, Tuple
@@ -12,6 +13,7 @@ from cargo import cargo_build, check_for_ice, cargo_clean
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 
 COMMIT_COUNT = 500
@@ -32,6 +34,32 @@ def get_organization_repository(repo_url: str) -> Tuple[str, str]:
         )
         exit(1)
     return match["organization"], match["repository"]
+
+
+def process_commit(
+    cfg, dir_path: str, repo: Repo, commit: Commit, organization: str, repository: str
+) -> bool:
+    """Process a single commit by compiling and checking for errors.
+
+    :returns: True, if an ICE was detected, else False.
+    """
+    # Check for errors
+    repo.git.checkout(commit.hexsha)
+    errors = check_for_ice(cfg, dir_path)
+
+    if errors:
+        logging.warning(
+            "Error detected for ",
+            GITHUB_COMMIT_URL.format(
+                organization=organization,
+                repository=repository,
+                hash=commit.hexsha,
+            ),
+        )
+        cargo_clean(cfg, dir_path)
+        return True
+
+    return False
 
 
 def process_repo(cfg, repo_url: str) -> bool:
@@ -61,19 +89,7 @@ def process_repo(cfg, repo_url: str) -> bool:
             batch_end = batch_start + COMMIT_BATCH_COUNT
 
             for commit in commits[batch_start:batch_end]:
-                repo.git.checkout(commit.hexsha)
-                errors = check_for_ice(cfg, tempdir)
-                if errors:
-                    found_error = True
-                    logging.warning(
-                        "Error detected for ",
-                        GITHUB_COMMIT_URL.format(
-                            organization=organization,
-                            repository=repository,
-                            hash=commit.hexsha,
-                        ),
-                    )
-                    cargo_clean(cfg, tempdir)
+                process_commit(cfg, tempdir, repo, commit, organization, repository)
 
             cur_count = min(len(commits), batch_end)
             percentage = cur_count / len(commits)
