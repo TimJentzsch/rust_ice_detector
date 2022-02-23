@@ -31,6 +31,9 @@ commit_batch_size: 20
 # The repositories that should be tested
 # They need to be GitHub SSH URLs for now
 repositories:
+  - git@github.com:tauri-apps/tauri.git
+  - git@github.com:tokio-rs/tokio.git
+  - git@github.com:actix/actix-web.git
   - git@github.com:bevyengine/bevy.git
 ```
 
